@@ -9,17 +9,25 @@ struct DispatchQueueExamples_Previews: PreviewProvider {
 
 struct DispatchQueueExamples: View {
     var body: some View {
-        VStack(alignment: .leading) {
-            RunButton("Main Thread to Main Queue - async", testMainThread_to_MainQueue_async)
-            RunButton("Main Thread to Main Queue - sync (CRASH)", testMainThread_to_MainQueue_sync)
-            Spacer().frame(height: 30)
-            RunButton("Main Thread to Serial Queue - async", testMainThread_to_SerialQueue_async)
-            RunButton("Main Thread to Serial Queue - sync", testMainThread_to_SerialQueue_sync)
-            Spacer().frame(height: 30)
-            RunButton("Main Thread to Concurrent Queue - async", testMainThread_to_ConcurrentQueue_async)
-            RunButton("Main Thread to Concurrent Queue - sync", testMainThread_to_ConcurrentQueue_sync)
-            Spacer().frame(height: 30)
-        }
+        VStack(alignment: .leading, spacing: 30) {
+            VStack(alignment: .leading) {
+                RunButton("Main Thread to Main Queue - async", testMainThread_to_MainQueue_async)
+                RunButton("Main Thread to Main Queue - sync (CRASH)", testMainThread_to_MainQueue_sync)
+            }
+            VStack(alignment: .leading) {
+                RunButton("Main Thread to Serial Queue - async", testMainThread_to_SerialQueue_async)
+                RunButton("Main Thread to Serial Queue - sync", testMainThread_to_SerialQueue_sync)
+            }
+            VStack(alignment: .leading) {
+                RunButton("Main Thread to Concurrent Queue - async", testMainThread_to_ConcurrentQueue_async)
+                RunButton("Main Thread to Concurrent Queue - sync", testMainThread_to_ConcurrentQueue_sync)
+            }
+            VStack(alignment: .leading) {
+                Text("DispatchQueue.global() has a pool of concurrent threads.")
+                RunButton("DispatchQueue.global().async", testMainThread_to_ConcurrentGlobal_async)
+                RunButton("DispatchQueue.global().sync", testMainThread_to_ConcurrentGlobal_sync)
+            }
+        }.frame(alignment: .leading)
     }
     
     // # MARK: Helpers
@@ -106,5 +114,25 @@ struct DispatchQueueExamples: View {
             longWorkTask("(2) 🥝 \(title) concurrentQueue.sync")
         }
         ThreadLogger.log("(3) \(title) END")
+    }
+    
+    func testMainThread_to_ConcurrentGlobal_async(_ title: String) {
+        DispatchQueue.global().async {
+            longWorkTask("(2) 🍊 \(title) DispatchQueue.global().async")
+        }
+        DispatchQueue.global().async {
+            longWorkTask("(2) 🥝 \(title) DispatchQueue.global().async")
+        }
+        ThreadLogger.log("(2) \(title) END")
+    }
+    
+    func testMainThread_to_ConcurrentGlobal_sync(_ title: String) {
+        DispatchQueue.global().sync {
+            longWorkTask("(3) 🍊 \(title) DispatchQueue.global().sync")
+        }
+        DispatchQueue.global().sync {
+            longWorkTask("(3) 🥝 \(title) DispatchQueue.global().sync")
+        }
+        ThreadLogger.log("(2) \(title) END")
     }
 }
