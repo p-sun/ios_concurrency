@@ -23,7 +23,7 @@ struct DispatchQueueExamples: View {
     
     let serialQueue = DispatchQueue(label: "paige.serial.queue")
     let concurrentQueue = DispatchQueue(label: "paige.concurrent.queue", attributes: .concurrent)
-    
+
     func RunButton(_ title: String, _ action: @escaping (_ title: String) -> Void) -> some View {
         return Button(action: {
             ThreadLogger.log("(1) \(title) START")
@@ -139,9 +139,10 @@ struct DispatchQueueExamples: View {
             
             VStack(alignment: .leading) {
                 Text("Avoiding crashes with sync").bold().dynamicTypeSize(.xxLarge)
+                
                 Text("Calling sync **from** and **to** the same **serial** queue crashes, since the async and sync tasks are waiting for each other to finish.")
-                RunButton("From Main: DispatchQueue.main.sync (CRASH)", toMainQueue_sync).accentColor(.red)
-                RunButton("From serialQueue.async: serialQueue.sync (CRASH)", {(title: String) -> Void in
+                RunButton("(CRASH) From Main: DispatchQueue.main.sync", toMainQueue_sync)
+                RunButton("(CRASH) From serialQueue.async: serialQueue.sync", {(title: String) -> Void in
                     serialQueue.async {
                         ThreadLogger.log("(3) \(title) serialQueue.async")
                         serialQueue.sync { // CRASH because DISPATCH_WAIT_FOR_QUEUE here
@@ -149,8 +150,23 @@ struct DispatchQueueExamples: View {
                         }
                     }
                     ThreadLogger.log("(2) \(title) END")
-                }).accentColor(.red)
-            }
+                })
+                
+                Text("Similarily, calling sync on queues that forms a **directed cycle** crashes.")
+
+                RunButton("(CRASH) From serialQueue.async: global().sync, serialQueue.sync", {(title: String) -> Void in
+                    serialQueue.async {
+                        ThreadLogger.log("(3) \(title) serialQueue.async start") // Thread A
+                        concurrentQueue.sync {
+                            ThreadLogger.log("(4) \(title) anyQueue.sync start") // Thread B
+                            serialQueue.sync { // CRASH b/c thread A is blocked
+                                ThreadLogger.log("(never) \(title) serialQueue.sync")
+                            }
+                        }
+                    }
+                    ThreadLogger.log("(2) \(title) END")
+                })
+            }.accentColor(.red)
             
             VStack(alignment: .leading) {
                 Text("Settings").bold().dynamicTypeSize(.xxLarge)
