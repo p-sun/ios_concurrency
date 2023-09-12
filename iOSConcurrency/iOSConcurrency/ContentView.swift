@@ -20,9 +20,7 @@ struct ContentView: View {
                     ScrollView {
                         Spacer()
                         DispatchQueueExamples()
-                    }
-                    .padding()
-
+                    }.padding()
                 }
             }
         }
