@@ -23,7 +23,7 @@ struct DispatchQueueExamples: View {
     
     let serialQueue = DispatchQueue(label: "paige.serial.queue")
     let concurrentQueue = DispatchQueue(label: "paige.concurrent.queue", attributes: .concurrent)
-
+    
     func RunButton(_ title: String, _ action: @escaping (_ title: String) -> Void) -> some View {
         return Button(action: {
             ThreadLogger.log("(1) \(title) START")
@@ -37,15 +37,13 @@ struct DispatchQueueExamples: View {
     }
     
     func longWorkTask(_ title: String) {
-        for i in 10...(longerWorkItems ? 1000 : 20) {
+        for i in 10...(longerWorkItems ? 1000 : 14) {
             ThreadLogger.log("\(i) | \(title)")
         }
     }
     
     var body: some View {
         LazyVStack(alignment: .leading, spacing: 30) {
-
-            
             VStack(alignment: .leading) {
                 Text("queue.async{ doWork() }").bold().dynamicTypeSize(.xxLarge)
                 Text("executes work on that queue.")
@@ -82,13 +80,13 @@ struct DispatchQueueExamples: View {
                 Text("DispatchQueue.global() has a pool of concurrent threads.")
                 RunButton("From Main: DispatchQueue.global().async", toConcurrentGlobal_async)
             }
-
+            
             VStack(alignment: .leading) {
                 Text("queue.sync{ doWork() }").bold().dynamicTypeSize(.xxLarge)
                 Text("blocks current thread until work is executed on current thread.")
                 RunButton("From Main: serialQueue.sync", toSerialQueue_sync)
                 RunButton("From Main: concurrentQueue.sync", toConcurrentQueue_sync)
-
+                
                 Text("Calling sync **from** and **to** the same **concurrent** queue is okay. Note the order work items are executed.")
                 RunButton("From concurrentQueue.async: concurrentQueue.sync, .sync", {(title: String) -> Void in
                     concurrentQueue.async {
@@ -116,7 +114,7 @@ struct DispatchQueueExamples: View {
                     }
                     ThreadLogger.log("(2) \(title) END")
                 })
-                RunButton("From concurrentQueue.async: concurrentQueue.sync, .async,\n.sync, async", {(title: String) -> Void in
+                RunButton("From concurrentQueue.async: concurrentQueue.sync, .async, .sync, async", {(title: String) -> Void in
                     concurrentQueue.async {
                         ThreadLogger.log("(3) \(title) outer async START")  // Thread A
                         concurrentQueue.sync {
@@ -153,7 +151,7 @@ struct DispatchQueueExamples: View {
                 })
                 
                 Text("Similarily, calling sync on queues that forms a **directed cycle** crashes.")
-
+                
                 RunButton("(CRASH) From serialQueue.async: global().sync, serialQueue.sync", {(title: String) -> Void in
                     serialQueue.async {
                         ThreadLogger.log("(3) \(title) serialQueue.async start") // Thread A
@@ -172,7 +170,7 @@ struct DispatchQueueExamples: View {
                 Text("Settings").bold().dynamicTypeSize(.xxLarge)
                 
                 Toggle("Run Longer Work Items", isOn: $longerWorkItems).tint(.orange).padding(.trailing, 2)
-
+                
                 RunButton("Spawn blocked thread on concurrent queue", {(title: String) -> Void in
                     spawnCounter.increment()
                     let spawnNum = spawnCounter.count
