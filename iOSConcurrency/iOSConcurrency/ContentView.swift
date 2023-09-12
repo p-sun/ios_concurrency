@@ -22,7 +22,7 @@ struct ContentView: View {
                         DispatchQueueExamples()
                     }
                     .padding()
-                    .frame(alignment: .leading)
+
                 }
             }
         }

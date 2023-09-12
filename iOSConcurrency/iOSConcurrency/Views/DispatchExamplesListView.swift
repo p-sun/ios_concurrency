@@ -8,8 +8,12 @@ struct DispatchQueueExamples_Previews: PreviewProvider {
 }
 
 struct DispatchQueueExamples: View {
+    @State var longerWorkItems = false
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 30) {
+        LazyVStack(alignment: .leading, spacing: 30) {
+            Toggle("Run Longer Work Items", isOn: $longerWorkItems).tint(.accentColor).padding(.trailing, 2)
+
             VStack(alignment: .leading) {
                 RunButton("Main Thread to Main Queue - async", testMainThread_to_MainQueue_async)
                 RunButton("Main Thread to Main Queue - sync (CRASH)", testMainThread_to_MainQueue_sync)
@@ -27,7 +31,7 @@ struct DispatchQueueExamples: View {
                 RunButton("DispatchQueue.global().async", testMainThread_to_ConcurrentGlobal_async)
                 RunButton("DispatchQueue.global().sync", testMainThread_to_ConcurrentGlobal_sync)
             }
-        }.frame(alignment: .leading)
+        }
     }
     
     // # MARK: Helpers
@@ -43,7 +47,7 @@ struct DispatchQueueExamples: View {
     }
     
     func longWorkTask(_ title: String) {
-        for i in 10...20 {
+        for i in 10...(longerWorkItems ? 1000 : 20) {
             ThreadLogger.log("\(i) | \(title)")
         }
     }
