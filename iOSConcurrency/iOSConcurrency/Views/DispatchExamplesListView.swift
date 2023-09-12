@@ -37,8 +37,10 @@ struct DispatchQueueExamples: View {
     }
     
     func longWorkTask(_ title: String) {
-        for i in 10...(longerWorkItems ? 1000 : 14) {
+        let sleepTime: UInt32 = longerWorkItems ? 300000 : 100000 // 1/3s vs 1/10s
+        for i in 10...14 {
             ThreadLogger.log("\(i) | \(title)")
+            usleep(sleepTime) // 1000000 = 1 sec
         }
     }
     
@@ -116,22 +118,22 @@ struct DispatchQueueExamples: View {
                 })
                 RunButton("From concurrentQueue.async: concurrentQueue.sync, .async, .sync, async", {(title: String) -> Void in
                     concurrentQueue.async {
-                        ThreadLogger.log("(3) \(title) outer async START")  // Thread A
+                        ThreadLogger.log("(3) \(title) | outer async START")  // Thread A
                         concurrentQueue.sync {
-                            longWorkTask("(4) 🍊 \(title) concurrentQueue.sync")  // Thread A
+                            longWorkTask("(4) 🍊 \(title) | concurrentQueue.sync")  // Thread A
                         }
                         concurrentQueue.async {
-                            longWorkTask("(5) 🥝 \(title) concurrentQueue.async") // Spins up new thread B
+                            longWorkTask("(5) 🥝 \(title) | concurrentQueue.async") // Spins up new thread B
                         }
                         concurrentQueue.sync {
-                            longWorkTask("(5) 🫐 \(title) concurrentQueue.sync")  // Thread A
+                            longWorkTask("(5) 🫐 \(title) | concurrentQueue.sync")  // Thread A
                         }
                         concurrentQueue.async {
-                            longWorkTask("(6) 🍇 \(title) concurrentQueue.async")  // Spins up new thread C
+                            longWorkTask("(6) 🍇 \(title) | concurrentQueue.async")  // Spins up new thread C or reuses thread B
                         }
-                        ThreadLogger.log("(7) \(title) outer async END")  // Thread A
+                        ThreadLogger.log("(7) \(title) | outer async END")  // Thread A
                     }
-                    ThreadLogger.log("(2) \(title) END")
+                    ThreadLogger.log("(2) \(title) | END")
                 })
             }
             
