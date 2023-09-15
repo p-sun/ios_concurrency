@@ -15,27 +15,31 @@ class Counter {
     }
 }
 
+func DQSection<Content: View>(_ header: String, @ViewBuilder _ content: () -> Content) -> some View {
+    VStack(alignment: .leading) {
+        Text(header).bold().dynamicTypeSize(.xxLarge)
+        content()
+    }
+}
+
+func DQRunButton(_ title: String, _ action: @escaping (_ title: String) -> Void) -> some View {
+    Button(action: {
+        ThreadLogger.log("(1) \(title) START")
+        action(title)
+    }) {
+        HStack {
+            Text(title).multilineTextAlignment(.leading)
+            Spacer()
+        }
+    }.buttonStyle(.borderedProminent)
+}
+
 struct DispatchQueueExamples: View {
-    @State var longerWorkItems = false
     var spawnCounter = Counter()
-    
-    // # MARK: Helpers
-    
     let serialQueue = DispatchQueue(label: "paige.serial.queue")
     let concurrentQueue = DispatchQueue(label: "paige.concurrent.queue", attributes: .concurrent)
     
-    func RunButton(_ title: String, _ action: @escaping (_ title: String) -> Void) -> some View {
-        return Button(action: {
-            ThreadLogger.log("(1) \(title) START")
-            action(title)
-        }) {
-            HStack {
-                Text(title).multilineTextAlignment(.leading)
-                Spacer()
-            }
-        }.buttonStyle(.borderedProminent)
-    }
-    
+    @State var longerWorkItems = false
     func longWorkTask(_ title: String) {
         let sleepTime: UInt32 = longerWorkItems ? 300000 : 100000 // 1/3s vs 1/10s
         for i in 10...14 {
@@ -43,13 +47,12 @@ struct DispatchQueueExamples: View {
             usleep(sleepTime) // 1000000 = 1 sec
         }
     }
-    
+
     var body: some View {
         LazyVStack(alignment: .leading, spacing: 30) {
-            VStack(alignment: .leading) {
-                Text("queue.async{ doWork() }").bold().dynamicTypeSize(.xxLarge)
+            DQSection("queue.async{ doWork() }") {
                 Text("executes work on that queue.")
-                RunButton("From Main: DispatchQueue.main.async", {(title: String) -> Void in
+                DQRunButton("From Main: DispatchQueue.main.async", {(title: String) -> Void in
                     DispatchQueue.main.async {
                         longWorkTask("(3) 🥝 \(title) main.async")
                     }
@@ -59,7 +62,7 @@ struct DispatchQueueExamples: View {
                     ThreadLogger.log("(2) \(title) END")
                 })
                 Text("Serial queue executes one work item at a time.")
-                RunButton("From Main: serialQueue.async", { (title: String) -> Void in
+                DQRunButton("From Main: serialQueue.async", { (title: String) -> Void in
                     serialQueue.async {
                         longWorkTask("(3) 🥝 \(title) serialQueue.async")
                     }
@@ -69,7 +72,7 @@ struct DispatchQueueExamples: View {
                     ThreadLogger.log("(2) \(title) END")
                 })
                 Text("Concurrent queue can execute multiple work items at once.")
-                RunButton("From Main: concurrentQueue.async", { (title: String) -> Void in
+                DQRunButton("From Main: concurrentQueue.async", { (title: String) -> Void in
                     concurrentQueue.async {
                         longWorkTask("(3) 🍊 \(title) concurrentQueue.async")
                     }
@@ -80,17 +83,16 @@ struct DispatchQueueExamples: View {
                 })
                 
                 Text("DispatchQueue.global() has a pool of concurrent threads.")
-                RunButton("From Main: DispatchQueue.global().async", toConcurrentGlobal_async)
+                DQRunButton("From Main: DispatchQueue.global().async", toConcurrentGlobal_async)
             }
             
-            VStack(alignment: .leading) {
-                Text("queue.sync{ doWork() }").bold().dynamicTypeSize(.xxLarge)
+            DQSection("queue.sync{ doWork() }") {
                 Text("blocks current thread until work is executed on current thread.")
-                RunButton("From Main: serialQueue.sync", toSerialQueue_sync)
-                RunButton("From Main: concurrentQueue.sync", toConcurrentQueue_sync)
+                DQRunButton("From Main: serialQueue.sync", toSerialQueue_sync)
+                DQRunButton("From Main: concurrentQueue.sync", toConcurrentQueue_sync)
                 
                 Text("Calling sync **from** and **to** the same **concurrent** queue is okay. Note the order work items are executed.")
-                RunButton("From concurrentQueue.async: concurrentQueue.sync, .sync", {(title: String) -> Void in
+                DQRunButton("From concurrentQueue.async: concurrentQueue.sync, .sync", {(title: String) -> Void in
                     concurrentQueue.async {
                         ThreadLogger.log("(3) \(title) outer async START")
                         concurrentQueue.sync {
@@ -103,7 +105,7 @@ struct DispatchQueueExamples: View {
                     }
                     ThreadLogger.log("(2) \(title) END")
                 })
-                RunButton("From concurrentQueue.async: concurrentQueue.async, .sync", {(title: String) -> Void in
+                DQRunButton("From concurrentQueue.async: concurrentQueue.async, .sync", {(title: String) -> Void in
                     concurrentQueue.async {
                         ThreadLogger.log("(3) \(title) outer async START") // Thread A
                         concurrentQueue.async {
@@ -116,7 +118,7 @@ struct DispatchQueueExamples: View {
                     }
                     ThreadLogger.log("(2) \(title) END")
                 })
-                RunButton("From concurrentQueue.async: concurrentQueue.sync, .async, .sync, async", {(title: String) -> Void in
+                DQRunButton("From concurrentQueue.async: concurrentQueue.sync, .async, .sync, async", {(title: String) -> Void in
                     concurrentQueue.async {
                         ThreadLogger.log("(3) \(title) | outer async START")  // Thread A
                         concurrentQueue.sync {
@@ -137,12 +139,10 @@ struct DispatchQueueExamples: View {
                 })
             }
             
-            VStack(alignment: .leading) {
-                Text("Avoiding crashes with sync").bold().dynamicTypeSize(.xxLarge)
-                
+            DQSection("Avoiding crashes with sync") {
                 Text("Calling sync **from** and **to** the same **serial** queue crashes, since the async and sync tasks are waiting for each other to finish.")
-                RunButton("(CRASH) From Main: DispatchQueue.main.sync", toMainQueue_sync)
-                RunButton("(CRASH) From serialQueue.async: serialQueue.sync", {(title: String) -> Void in
+                DQRunButton("(CRASH) From Main: DispatchQueue.main.sync", toMainQueue_sync)
+                DQRunButton("(CRASH) From serialQueue.async: serialQueue.sync", {(title: String) -> Void in
                     serialQueue.async {
                         ThreadLogger.log("(3) \(title) serialQueue.async")
                         serialQueue.sync { // CRASH because DISPATCH_WAIT_FOR_QUEUE here
@@ -154,7 +154,7 @@ struct DispatchQueueExamples: View {
                 
                 Text("Similarily, calling sync on queues that forms a **directed cycle** crashes.")
                 
-                RunButton("(CRASH) From serialQueue.async: global().sync, serialQueue.sync", {(title: String) -> Void in
+                DQRunButton("(CRASH) From serialQueue.async: global().sync, serialQueue.sync", {(title: String) -> Void in
                     serialQueue.async {
                         ThreadLogger.log("(3) \(title) serialQueue.async start") // Thread A
                         concurrentQueue.sync {
@@ -168,12 +168,11 @@ struct DispatchQueueExamples: View {
                 })
             }.accentColor(.red)
             
-            VStack(alignment: .leading) {
-                Text("Settings").bold().dynamicTypeSize(.xxLarge)
+            DQSection("Settings") {
                 
                 Toggle("Run Longer Work Items", isOn: $longerWorkItems).tint(.orange).padding(.trailing, 2)
                 
-                RunButton("Spawn blocked thread on concurrent queue", {(title: String) -> Void in
+                DQRunButton("Spawn blocked thread on concurrent queue", {(title: String) -> Void in
                     spawnCounter.increment()
                     let spawnNum = spawnCounter.count
                     concurrentQueue.async {
