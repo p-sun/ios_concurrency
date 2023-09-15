@@ -1,9 +1,9 @@
 import Foundation
 import SwiftUI
 
-struct DispatchQueueExamples_Previews: PreviewProvider {
+struct DispatchExamplesList_Previews: PreviewProvider {
     static var previews: some View {
-        DispatchQueueExamples()
+        DispatchExamplesList()
     }
 }
 
@@ -34,7 +34,7 @@ func DQRunButton(_ title: String, _ action: @escaping (_ title: String) -> Void)
     }.buttonStyle(.borderedProminent)
 }
 
-struct DispatchQueueExamples: View {
+struct DispatchExamplesList: View {
     var spawnCounter = Counter()
     let serialQueue = DispatchQueue(label: "paige.serial.queue")
     let concurrentQueue = DispatchQueue(label: "paige.concurrent.queue", attributes: .concurrent)
@@ -228,7 +228,7 @@ struct DispatchQueueExamples: View {
             }
         }
     }
-        
+    
     func fromSerialQueue(_ fn: @escaping (_ title: String) -> Void) -> (_ title: String) -> Void {
         return {(title: String) -> Void in
             serialQueue.async {

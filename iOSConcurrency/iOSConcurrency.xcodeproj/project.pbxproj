@@ -14,7 +14,7 @@
 		9B0C438E2AA79C70007236FA /* iOSConcurrencyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B0C438D2AA79C70007236FA /* iOSConcurrencyTests.swift */; };
 		9B0C43982AA79C70007236FA /* iOSConcurrencyUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B0C43972AA79C70007236FA /* iOSConcurrencyUITests.swift */; };
 		9B0C439A2AA79C70007236FA /* iOSConcurrencyUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B0C43992AA79C70007236FA /* iOSConcurrencyUITestsLaunchTests.swift */; };
-		9B0C43A72AA79CC5007236FA /* DispatchExamplesListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B0C43A62AA79CC5007236FA /* DispatchExamplesListView.swift */; };
+		9B0C43A72AA79CC5007236FA /* DispatchExamplesList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B0C43A62AA79CC5007236FA /* DispatchExamplesList.swift */; };
 		9B0C43AB2AA79D30007236FA /* ThreadLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B0C43AA2AA79D30007236FA /* ThreadLogger.swift */; };
 /* End PBXBuildFile section */
 
@@ -46,7 +46,7 @@
 		9B0C43932AA79C70007236FA /* iOSConcurrencyUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iOSConcurrencyUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9B0C43972AA79C70007236FA /* iOSConcurrencyUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSConcurrencyUITests.swift; sourceTree = "<group>"; };
 		9B0C43992AA79C70007236FA /* iOSConcurrencyUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSConcurrencyUITestsLaunchTests.swift; sourceTree = "<group>"; };
-		9B0C43A62AA79CC5007236FA /* DispatchExamplesListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DispatchExamplesListView.swift; sourceTree = "<group>"; };
+		9B0C43A62AA79CC5007236FA /* DispatchExamplesList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DispatchExamplesList.swift; sourceTree = "<group>"; };
 		9B0C43AA2AA79D30007236FA /* ThreadLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadLogger.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -136,7 +136,7 @@
 		9B0C43A82AA79CE5007236FA /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				9B0C43A62AA79CC5007236FA /* DispatchExamplesListView.swift */,
+				9B0C43A62AA79CC5007236FA /* DispatchExamplesList.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -281,7 +281,7 @@
 			files = (
 				9B0C437F2AA79C6E007236FA /* ContentView.swift in Sources */,
 				9B0C43AB2AA79D30007236FA /* ThreadLogger.swift in Sources */,
-				9B0C43A72AA79CC5007236FA /* DispatchExamplesListView.swift in Sources */,
+				9B0C43A72AA79CC5007236FA /* DispatchExamplesList.swift in Sources */,
 				9B0C437D2AA79C6E007236FA /* iOSConcurrencyApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
