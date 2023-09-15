@@ -47,10 +47,11 @@ struct DispatchQueueExamples: View {
             usleep(sleepTime) // 1000000 = 1 sec
         }
     }
-
+    
     var body: some View {
         LazyVStack(alignment: .leading, spacing: 30) {
             DQSection("queue.async{ doWork() }") {
+                
                 Text("executes work on that queue.")
                 DQRunButton("From Main: DispatchQueue.main.async", {(title: String) -> Void in
                     DispatchQueue.main.async {
@@ -61,6 +62,10 @@ struct DispatchQueueExamples: View {
                     }
                     ThreadLogger.log("(2) \(title) END")
                 })
+                
+                // serial queue guarantees that only one thread will being executing work on the queue at a time
+                // It does not guarantee which specific thread will do that execution.
+                // Dispatch maintains a pool of worker threads and, when work becomes available to execute, it will allocate one thread from that pool to run that work.
                 Text("Serial queue executes one work item at a time.")
                 DQRunButton("From Main: serialQueue.async", { (title: String) -> Void in
                     serialQueue.async {
@@ -71,6 +76,7 @@ struct DispatchQueueExamples: View {
                     }
                     ThreadLogger.log("(2) \(title) END")
                 })
+                
                 Text("Concurrent queue can execute multiple work items at once.")
                 DQRunButton("From Main: concurrentQueue.async", { (title: String) -> Void in
                     concurrentQueue.async {
@@ -83,13 +89,38 @@ struct DispatchQueueExamples: View {
                 })
                 
                 Text("DispatchQueue.global() has a pool of concurrent threads.")
-                DQRunButton("From Main: DispatchQueue.global().async", toConcurrentGlobal_async)
+                DQRunButton("From Main: DispatchQueue.global().async", { title in
+                    DispatchQueue.global().async {
+                        longWorkTask("(3) 🍊 \(title) DispatchQueue.global().async")
+                    }
+                    DispatchQueue.global().async {
+                        longWorkTask("(3) 🥝 \(title) DispatchQueue.global().async")
+                    }
+                    ThreadLogger.log("(2) \(title) END")
+                })
             }
             
             DQSection("queue.sync{ doWork() }") {
                 Text("blocks current thread until work is executed on current thread.")
-                DQRunButton("From Main: serialQueue.sync", toSerialQueue_sync)
-                DQRunButton("From Main: concurrentQueue.sync", toConcurrentQueue_sync)
+                DQRunButton("From Main: serialQueue.sync", { title in
+                    serialQueue.sync {
+                        longWorkTask("(2) 🍊 \(title) serialQueue.async")
+                    }
+                    serialQueue.sync {
+                        longWorkTask("(2) 🥝 \(title) serialQueue.async")
+                    }
+                    ThreadLogger.log("(3) \(title) END")
+                })
+                
+                DQRunButton("From Main: concurrentQueue.sync", { title in
+                    concurrentQueue.sync {
+                        longWorkTask("(2) 🍊 \(title) concurrentQueue.sync")
+                    }
+                    concurrentQueue.sync {
+                        longWorkTask("(3) 🥝 \(title) concurrentQueue.sync")
+                    }
+                    ThreadLogger.log("(4) \(title) END")
+                })
                 
                 Text("Calling sync **from** and **to** the same **concurrent** queue is okay. Note the order work items are executed.")
                 DQRunButton("From concurrentQueue.async: concurrentQueue.sync, .sync", {(title: String) -> Void in
@@ -105,6 +136,7 @@ struct DispatchQueueExamples: View {
                     }
                     ThreadLogger.log("(2) \(title) END")
                 })
+                
                 DQRunButton("From concurrentQueue.async: concurrentQueue.async, .sync", {(title: String) -> Void in
                     concurrentQueue.async {
                         ThreadLogger.log("(3) \(title) outer async START") // Thread A
@@ -118,6 +150,7 @@ struct DispatchQueueExamples: View {
                     }
                     ThreadLogger.log("(2) \(title) END")
                 })
+                
                 DQRunButton("From concurrentQueue.async: concurrentQueue.sync, .async, .sync, async", {(title: String) -> Void in
                     concurrentQueue.async {
                         ThreadLogger.log("(3) \(title) | outer async START")  // Thread A
@@ -141,7 +174,16 @@ struct DispatchQueueExamples: View {
             
             DQSection("Avoiding crashes with sync") {
                 Text("Calling sync **from** and **to** the same **serial** queue crashes, since the async and sync tasks are waiting for each other to finish.")
-                DQRunButton("(CRASH) From Main: DispatchQueue.main.sync", toMainQueue_sync)
+                DQRunButton("(CRASH) From Main: DispatchQueue.main.sync", { title in
+                    // EXC_BAD_INSTRUCTION Crash.
+                    // Calling `sync` and targeting the current queue results in deadlock,
+                    // because 'sync' blocks current thread until pending items has finished.
+                    DispatchQueue.main.sync { // 2
+                        ThreadLogger.log("(never) \(title) main.sync")
+                    }
+                    ThreadLogger.log("(never) \(title) END")
+                })
+                
                 DQRunButton("(CRASH) From serialQueue.async: serialQueue.sync", {(title: String) -> Void in
                     serialQueue.async {
                         ThreadLogger.log("(3) \(title) serialQueue.async")
@@ -153,7 +195,6 @@ struct DispatchQueueExamples: View {
                 })
                 
                 Text("Similarily, calling sync on queues that forms a **directed cycle** crashes.")
-                
                 DQRunButton("(CRASH) From serialQueue.async: global().sync, serialQueue.sync", {(title: String) -> Void in
                     serialQueue.async {
                         ThreadLogger.log("(3) \(title) serialQueue.async start") // Thread A
@@ -187,109 +228,12 @@ struct DispatchQueueExamples: View {
             }
         }
     }
-    
-    // # MARK: Private
-    
+        
     func fromSerialQueue(_ fn: @escaping (_ title: String) -> Void) -> (_ title: String) -> Void {
         return {(title: String) -> Void in
             serialQueue.async {
                 fn(title)
             }
         }
-    }
-    
-    func toMainQueue_async(_ title: String) {
-        DispatchQueue.main.async {
-            longWorkTask("(3) 🥝 \(title) main.async")
-        }
-        DispatchQueue.main.async {
-            longWorkTask("(4) 🍊 \(title) main.async")
-        }
-        ThreadLogger.log("(2) \(title) END")
-    }
-    
-    func toMainQueue_sync(_ title: String) {
-        // EXC_BAD_INSTRUCTION Crash.
-        // Calling `sync` and targeting the current queue results in deadlock,
-        // because 'sync' blocks current thread until pending items has finished.
-        DispatchQueue.main.sync { // 2
-            ThreadLogger.log("(never) \(title) main.sync")
-        }
-        ThreadLogger.log("(never) \(title) END")
-    }
-    
-    
-    // serial queue guarantees that only one thread will being executing work on the queue at a time
-    // It does not guarantee which specific thread will do that execution.
-    // Dispatch maintains a pool of worker threads and, when work becomes available to execute, it will allocate one thread from that pool to run that work.
-    func toSerialQueue_async(_ title: String) {
-        serialQueue.async {
-            longWorkTask("(3) 🥝 \(title) serialQueue.async")
-        }
-        serialQueue.async {
-            longWorkTask("(4) 🍊 \(title) serialQueue.async")
-        }
-        ThreadLogger.log("(2) \(title) END")
-    }
-    
-    func toSerialQueue_sync(_ title: String) {
-        serialQueue.sync {
-            longWorkTask("(2) 🍊 \(title) serialQueue.async")
-        }
-        serialQueue.sync {
-            longWorkTask("(2) 🥝 \(title) serialQueue.async")
-        }
-        ThreadLogger.log("(3) \(title) END")
-    }
-    
-    func toConcurrentQueue_async(_ title: String) {
-        concurrentQueue.async {
-            longWorkTask("(3) 🍊 \(title) concurrentQueue.async")
-        }
-        concurrentQueue.async {
-            longWorkTask("(3) 🥝 \(title) concurrentQueue.async")
-        }
-        ThreadLogger.log("(2) \(title) END")
-    }
-    
-    func toConcurrentQueue_sync(_ title: String) {
-        concurrentQueue.sync {
-            longWorkTask("(2) 🍊 \(title) concurrentQueue.sync")
-        }
-        concurrentQueue.sync {
-            longWorkTask("(3) 🥝 \(title) concurrentQueue.sync")
-        }
-        ThreadLogger.log("(4) \(title) END")
-    }
-    
-    func toConcurrentGlobal_async(_ title: String) {
-        DispatchQueue.global().async {
-            longWorkTask("(3) 🍊 \(title) DispatchQueue.global().async")
-        }
-        DispatchQueue.global().async {
-            longWorkTask("(3) 🥝 \(title) DispatchQueue.global().async")
-        }
-        ThreadLogger.log("(2) \(title) END")
-    }
-    
-    func toConcurrentGlobal_sync(_ title: String) {
-        DispatchQueue.global().sync {
-            longWorkTask("(3) 🍊 \(title) DispatchQueue.global().sync")
-        }
-        DispatchQueue.global().sync {
-            longWorkTask("(3) 🥝 \(title) DispatchQueue.global().sync")
-        }
-        DispatchQueue.global().sync {
-            longWorkTask("(3) 😍 \(title) DispatchQueue.global().sync")
-        }
-        ThreadLogger.log("(2) \(title) END")
-    }
-    
-    func globalToSerialQueue_sync(_ title: String) {
-        DispatchQueue.global().async {
-            ThreadLogger.log("(3) \(title) serialQueue.async")
-            toSerialQueue_sync(title)
-        }
-        ThreadLogger.log("(2) \(title) END")
     }
 }
