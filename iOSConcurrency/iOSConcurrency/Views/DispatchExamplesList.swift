@@ -42,8 +42,8 @@ struct DispatchExamplesList: View {
     @State var longerWorkItems = false
     func longWorkTask(_ title: String) {
         let sleepTime: UInt32 = longerWorkItems ? 300000 : 100000 // 1/3s vs 1/10s
-        for i in 10...14 {
-            ThreadLogger.log("\(i) | \(title)")
+        for _ in 10...14 {
+            ThreadLogger.log(title)
             usleep(sleepTime) // 1000000 = 1 sec
         }
     }
@@ -151,7 +151,7 @@ struct DispatchExamplesList: View {
                     ThreadLogger.log("(2) \(title) END")
                 })
                 
-                DQRunButton("From concurrentQueue.async: concurrentQueue.sync, .async, .sync, async", {(title: String) -> Void in
+                DQRunButton("From concurrentQueue.async: concurrentQueue.sync, async, sync, async", {(title: String) -> Void in
                     concurrentQueue.async {
                         ThreadLogger.log("(3) \(title) | outer async START")  // Thread A
                         concurrentQueue.sync {
@@ -167,6 +167,53 @@ struct DispatchExamplesList: View {
                             longWorkTask("(6) 🍇 \(title) | concurrentQueue.async")  // Spins up new thread C or reuses thread B
                         }
                         ThreadLogger.log("(7) \(title) | outer async END")  // Thread A
+                    }
+                    ThreadLogger.log("(2) \(title) | END")
+                })
+            }
+            
+            // https://developer.apple.com/documentation/dispatch/dispatchworkitemflags/1780674-barrier
+            DQSection("DispatchWorkItemFlags - Barrier") {
+                
+                DQRunButton("No barrier. From Main: concurrentQueue.async, async, sync, async", {(title: String) -> Void in
+                    concurrentQueue.async {
+                        longWorkTask("(2) 🍊 \(title) | concurrentQueue.async")  // Thread A
+                    }
+                    concurrentQueue.async {
+                        longWorkTask("(2) 🥝 \(title) | concurrentQueue.async") // Spins up new thread B
+                    }
+                    concurrentQueue.sync {
+                        longWorkTask("(2) 🫐 \(title) | concurrentQueue.sync")  // Main
+                    }
+                    ThreadLogger.log("(3) \(title) | END")
+                })
+                
+                Text("Prior scheduled work completes, then barrier work completes, then work scheduled after executes.")
+                DQRunButton("Sync With barrier. From Main: concurrentQueue.async, async, sync with barrier, async", {(title: String) -> Void in
+                    concurrentQueue.async {
+                        longWorkTask("(2) 🍊 \(title) | concurrentQueue.async") // Thread A
+                    }
+                    concurrentQueue.async {
+                        longWorkTask("(2) 🥝 \(title) | concurrentQueue.async") // Spins up new thread B
+                    }
+                    concurrentQueue.sync(flags: .barrier) {
+                        longWorkTask("(3) 🫐 \(title) | concurrentQueue.sync") // Main
+                    }
+                    ThreadLogger.log("(4) \(title) | END")
+                })
+                
+                DQRunButton("Async with barrier. From Main: concurrentQueue.async, async, async with barrier, async", {(title: String) -> Void in
+                    concurrentQueue.async {
+                        longWorkTask("(3) 🍊 \(title) | concurrentQueue.async")  // Thread A
+                    }
+                    concurrentQueue.async {
+                        longWorkTask("(3) 🥝 \(title) | concurrentQueue.async") // Spins up new thread B
+                    }
+                    concurrentQueue.async(flags: .barrier) {
+                        longWorkTask("(4) 🫐 \(title) | concurrentQueue.sync")
+                    }
+                    concurrentQueue.async {
+                        longWorkTask("(5) 🍇 \(title) | concurrentQueue.sync")
                     }
                     ThreadLogger.log("(2) \(title) | END")
                 })
@@ -208,7 +255,7 @@ struct DispatchExamplesList: View {
                     ThreadLogger.log("(2) \(title) END")
                 })
             }.accentColor(.red)
-            
+    
             DQSection("Settings") {
                 
                 Toggle("Run Longer Work Items", isOn: $longerWorkItems).tint(.orange).padding(.trailing, 2)
