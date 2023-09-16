@@ -9,7 +9,7 @@ Emojis make it easy to visually scan the logs to see which work item occurred on
 ## Sync and async in a concurrent queue
 Press the button to run this example. Note the code and the logs.
 
-![__con268081491-b2b9b5b7404-4660-ad2c-6f73a35a469a](https://github.com/p-sun/ios_concurrency/assets/9044578/5eb229d4-36c3-4d48-888c-67c6c92b2ad0)
+![Screenshot 2023-09-16 at 1 39 50 PM](https://github.com/p-sun/ios_concurrency/assets/9044578/671838a1-8a93-4665-8172-1edefa8c9b5c)
 
 ## Video Sample
 
