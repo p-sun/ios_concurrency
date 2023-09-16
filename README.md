@@ -13,4 +13,4 @@ Press the button to run this example. Note the code and the logs.
 
 ## Video Sample
 
-https://github.com/p-sun/ios_concurrency/assets/9044578/5b7e0e19-ea8a-48fa-a46e-d2e1f6d17ef4
+https://github.com/p-sun/ios_concurrency/assets/9044578/4fc81fc5-1b19-457a-bbd6-929ff4d2d443
