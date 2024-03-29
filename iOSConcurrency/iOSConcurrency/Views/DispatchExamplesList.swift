@@ -122,7 +122,7 @@ struct DispatchExamplesList: View {
                     ThreadLogger.log("\(title) | (4) END")
                 })
                 
-                Text("Calling sync **from** and **to** the same **concurrent** queue is okay. Note the order work items are executed.")
+                Text("Calling sync **from** and **to** the same **concurrent** queue is okay.")
                 DQRunButton("From concurrentQueue.async: concurrentQueue.sync, .sync", {(title: String) -> Void in
                     concurrentQueue.async {
                         ThreadLogger.log("\(title) | (3) outer async START")
@@ -164,11 +164,26 @@ struct DispatchExamplesList: View {
                             longWorkTask(title, "(5) 🫐 | concurrentQueue.sync")  // Thread A
                         }
                         concurrentQueue.async {
-                            longWorkTask(title, "(6) 🍇 | concurrentQueue.async")  // Spins up new thread C or reuses thread B
+                            longWorkTask(title, "(7) 🍇 | concurrentQueue.async")  // Spins up new thread C or reuses thread B
                         }
-                        ThreadLogger.log("\(title) | (7) | outer async END")  // Thread A
+                        ThreadLogger.log("\(title) | (6) | outer async END")  // Thread A
                     }
                     ThreadLogger.log("\(title) | (2) | END")
+                })
+                
+                Text("As a performance optimization, ‘sync’ executes blocks on the current thread. (i.e. caller thread) whenever possible, with one exception: Blocks submitted to the main dispatch queue always run on the main thread.")
+                DQRunButton("From concurrentQueue.async: concurrentQueue.sync, main.sync", {(title: String) -> Void in
+                    concurrentQueue.async {
+                        ThreadLogger.log("\(title) | (3) outer async START") // Thread A
+                        DispatchQueue.main.sync {
+                            longWorkTask(title, "(4) 🥝 main.sync") // Main thread
+                        }
+                        concurrentQueue.sync {
+                            longWorkTask(title, "(5) 🍊 concurrentQueue.sync") // Thread A
+                        }
+                        ThreadLogger.log("\(title) | (6) outer async END") // Thread A
+                    }
+                    ThreadLogger.log("\(title) | (2) END")
                 })
             }
             
